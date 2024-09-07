@@ -74,3 +74,5 @@ class AdbNodeJsCredentialStore {
 const CredentialStore = new AdbNodeJsCredentialStore(
   `${userInfo().username}@${hostname()}`
 );
+
+export default CredentialStore;

@@ -1,59 +1,5 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
 const { WebUSB } = require("usb");
-
-async function importstuff() {
-  try {
-    const { AdbDaemonWebUsbDeviceManager } = await import(
-      "@yume-chan/adb-daemon-webusb"
-    );
-    const { Adb, AdbDaemonTransport } = await import("@yume-chan/adb");
-    const CredentialStore = await import("./credential_store.mjs");
-
-    const WebUsb = new WebUSB({ allowAllDevices: true });
-    const Manager = new AdbDaemonWebUsbDeviceManager(WebUsb);
-
-    // Get all ADB access android Devices.
-    const devices = await Manager.getDevices();
-    vscode.window.showInformationMessage(
-      "ADB devices found : " + devices.length
-    );
-
-    // Connect to the device
-    if (devices.length != 0) {
-      const device = devices[0];
-      const connection = await device.connect();
-
-      // Create ADB Transport
-      const transport = await AdbDaemonTransport.authenticate({
-        serial: device.serial,
-        connection,
-        credentialStore: CredentialStore,
-      });
-
-      // Create adb instance
-      const adb = new Adb(transport);
-
-      // Take screenshot in device
-      const screenshot = await adb.framebuffer();
-
-      // Create Image data
-      const imageData = new ImageData(
-        new Uint8ClampedArray(screenshot.data),
-        screenshot.width,
-        screenshot.height
-      );
-
-      vscode.window.showInformationMessage(
-        "Screenshot taken."
-      );
-    }
-  } catch (error) {
-    console.error("Failed to connect ADB device:", error);
-    vscode.window.showErrorMessage("Failed to connect ADB device.");
-  }
-}
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -69,12 +15,47 @@ function activate(context) {
   const disposable = vscode.commands.registerCommand(
     "scrcpy.helloWorld",
     function () {
-      // The code you place here will be executed every time your command is executed
+      vscode.window.showInformationMessage("Fetching connected devices...");
 
-      // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from Screen-Copy!");
+      // Get Devices
+      (async () => {
+        const { AdbDaemonWebUsbDeviceManager } = await import(
+          "@yume-chan/adb-daemon-webusb"
+        );
 
-      importstuff();
+        const Manager = new AdbDaemonWebUsbDeviceManager(
+          new WebUSB({ allowAllDevices: true })
+        );
+
+        try {
+          const devices = await Manager.getDevices();
+          let deviceList = devices.map((device) => ({
+            label: device.name,
+            description: device.productName,
+            detail: device.serialNumber,
+          }));
+
+          if (deviceList.length === 0) {
+            vscode.window.showInformationMessage("No devices connected.");
+          } else {
+            const selectedDevice = await vscode.window.showQuickPick(
+              deviceList,
+              {
+                placeHolder: "Select a device to view details",
+              }
+            );
+
+            if (selectedDevice) {
+              vscode.window.showInformationMessage(
+                `Device Selected: ${selectedDevice.label} (${selectedDevice.description})`
+              );
+            }
+          }
+        } catch (error) {
+          console.error(error);
+          vscode.window.showErrorMessage("Failed to retrieve devices.");
+        }
+      })();
     }
   );
 

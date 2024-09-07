@@ -22,7 +22,8 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "postinstall": "fetch-scrcpy-server 2.6"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
@@ -30,13 +31,18 @@
     "@types/vscode": "^1.92.0",
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
+    "@yume-chan/fetch-scrcpy-server": "^0.0.24",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@yume-chan/adb": "^0.0.24",
     "@yume-chan/adb-daemon-webusb": "^0.0.24",
+    "@yume-chan/adb-scrcpy": "^0.0.24",
+    "@yume-chan/scrcpy": "^0.0.24",
     "@yume-chan/stream-extra": "^0.0.24",
+    "canvas": "^2.11.2",
+    "pngjs": "^7.0.0",
     "usb": "^2.13.0"
   }
 }
