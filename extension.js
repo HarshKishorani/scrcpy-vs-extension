@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const { WebUSB } = require("usb");
-const fs = require("fs/promises"); // TODO Test import
+const fs = require("fs/promises");
 
 let devices = [];
 
@@ -179,6 +179,7 @@ function activate(context) {
           await client.videoStream;
 
         identifyCodec(videoMetadata.codec);
+        // TODO : Implement video streaming in vscode
       }
 
       // Control Device
