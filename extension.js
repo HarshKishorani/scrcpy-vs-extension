@@ -133,6 +133,84 @@ async function getAndDisplayDevices() {
   }
 }
 
+function getWebviewContent(context) {
+  return `<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADB Device Video Stream</title>
+</head>
+
+<body>
+</body>
+
+</html>`;
+}
+
+
+async function startVideoStream(context) {
+  // const { TinyH264Decoder } = await import("@yume-chan/scrcpy-decoder-tinyh264");
+  // const decoder = new TinyH264Decoder();
+
+  // Get and connect to device
+  const selectedDevice = await getAndDisplayDevices();
+  if (!selectedDevice) return;
+
+  const adb = await connectDevice(selectedDevice);
+  if (!adb) return;
+
+  // Push Server
+  await pushScrcpyServer(adb);
+
+  // Start server
+  const client = await startServer(adb);
+
+  if (!client) {
+    vscode.window.showErrorMessage("Failed to start scrcpy client");
+    return;
+  }
+
+  // Create webview panel
+  const panel = vscode.window.createWebviewPanel(
+    "adbVideoStream",
+    "ADB Device Video Stream",
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.file(context.extensionPath)],
+    }
+  );
+
+  // Set webview content
+  panel.webview.html = getWebviewContent();
+
+  // Set up video stream
+  if (client.videoStream) {
+    const { stream: videoPacketStream } = await client.videoStream;
+
+    videoPacketStream
+      .pipeTo(
+        new WritableStream({
+          async write(packet) {
+            switch (packet.type) {
+              case "data":
+                panel.webview.postMessage({
+                  type: "videoFrame",
+                  frameData: packet.data, // Uint8Array
+                });
+                break;
+            }
+          },
+        })
+      )
+      .catch((e) => {
+        console.error(e);
+      });
+  }
+}
+
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -143,48 +221,10 @@ function activate(context) {
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with  registerCommand
   // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand(
-    "scrcpy.startcopy",
-    async function () {
-      vscode.window.showInformationMessage("Fetching connected devices...");
 
-      // Get Devices
-      const selectedDevice = await getAndDisplayDevices();
-      if (selectedDevice) {
-        vscode.window.showInformationMessage(
-          `Device Selected: ${selectedDevice.label} (${selectedDevice.index})`
-        );
-      } else {
-        return;
-      }
-
-      // Connect to a Device
-      const adb = await connectDevice(selectedDevice);
-
-      if (adb) {
-        vscode.window.showInformationMessage(`ADB Connected.`);
-      } else {
-        return;
-      }
-
-      // Push Server
-      await pushScrcpyServer(adb);
-
-      // Start server
-      const client = await startServer(adb);
-
-      // Get Video Stream
-      if (client.videoStream) {
-        const { metadata: videoMetadata, stream: videoPacketStream } =
-          await client.videoStream;
-
-        identifyCodec(videoMetadata.codec);
-        // TODO : Implement video streaming in vscode
-      }
-
-      // Control Device
-    }
-  );
+  let disposable = vscode.commands.registerCommand("scrcpy.startcopy", () => {
+    startVideoStream(context);
+  });
 
   context.subscriptions.push(disposable);
 }
