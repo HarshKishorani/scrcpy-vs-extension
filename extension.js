@@ -144,16 +144,24 @@ function getWebviewContent(context) {
 </head>
 
 <body>
+    <canvas id="video-canvas"></canvas>
+    <script>
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'videoFrame':
+                    // Convert the frame data to Uint8Array and decode
+                    console.log(message.frameData);
+                    break;
+            }
+        });
+    </script>
 </body>
 
 </html>`;
 }
 
-
 async function startVideoStream(context) {
-  // const { TinyH264Decoder } = await import("@yume-chan/scrcpy-decoder-tinyh264");
-  // const decoder = new TinyH264Decoder();
-
   // Get and connect to device
   const selectedDevice = await getAndDisplayDevices();
   if (!selectedDevice) return;
@@ -179,12 +187,14 @@ async function startVideoStream(context) {
     vscode.ViewColumn.One,
     {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.file(context.extensionPath)],
+      localResourceRoots: [
+        vscode.Uri.file(context.extensionPath)
+      ],
     }
   );
 
   // Set webview content
-  panel.webview.html = getWebviewContent();
+  panel.webview.html = getWebviewContent(context);
 
   // Set up video stream
   if (client.videoStream) {
@@ -198,7 +208,7 @@ async function startVideoStream(context) {
               case "data":
                 panel.webview.postMessage({
                   type: "videoFrame",
-                  frameData: packet.data, // Uint8Array
+                  frameData: packet.data,
                 });
                 break;
             }

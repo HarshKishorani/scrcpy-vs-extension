@@ -37,7 +37,9 @@
     "@vscode/test-electron": "^2.4.0",
     "@yume-chan/fetch-scrcpy-server": "^0.0.24",
     "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "@yume-chan/adb": "^0.0.24",
@@ -46,6 +48,7 @@
     "@yume-chan/scrcpy": "^0.0.24",
     "@yume-chan/scrcpy-decoder-tinyh264": "^0.0.24",
     "@yume-chan/stream-extra": "^0.0.24",
+    "chrome-launcher": "^1.1.2",
     "usb": "^2.13.0"
   }
 }
